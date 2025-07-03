@@ -1,8 +1,13 @@
 streamlit
-numpy
 pandas
 matplotlib
 seaborn
-scikit-learn
 wordcloud
+underthesea
+scikit-learn
 openpyxl
+numpy
+xgboost
+joblib
+tqdm
+requests
