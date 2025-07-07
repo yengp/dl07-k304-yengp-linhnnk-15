@@ -11,4 +11,4 @@ xgboost
 joblib
 tqdm
 requests
-predictor
+plotly
