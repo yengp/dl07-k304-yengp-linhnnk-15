@@ -7,14 +7,8 @@ wordcloud
 underthesea
 scikit-learn
 openpyxl
-numpy
 xgboost
 joblib
 tqdm
 requests
 predictor
-re
-sklearn.linear_model
-sklearn.ensemble
-sklearn.feature_extraction.text
-sklearn.preprocessing
