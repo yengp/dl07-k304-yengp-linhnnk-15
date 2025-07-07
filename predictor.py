@@ -1,7 +1,6 @@
 import pickle
 from underthesea import word_tokenize
 import re
-import predictor
 
 
 
