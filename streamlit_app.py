@@ -1503,7 +1503,7 @@ elif menu_selection == "New Prediction":
                 📊 **Thống kê cụm:**
                 - Tỷ lệ trong tổng số công ty: {cluster_details['percentage']}
                 - Điểm rating trung bình: {cluster_details['avg_rating']}/5
-                - Cảm xúc chủ đạo: {cluster_details['sentiment']}
+                - Cảm xúc chủ đạo: {cluster_details['sentiment_rating']}
                 
                 💡 **Đề xuất:** Tham khảo các công ty cùng cụm {cluster_id} để cải thiện điểm yếu và phát huy điểm mạnh.
                 """)
@@ -1511,7 +1511,7 @@ elif menu_selection == "New Prediction":
         with col2:
             # Phân bố cảm xúc với màu sắc phù hợp và tương tác
             st.write("**Phân bố cảm xúc:**")
-            sentiment_counts = company_df["sentiment"].value_counts()
+            sentiment_counts = company_df["sentiment_rating"].value_counts()
             
             # Tạo interactive chart với Plotly
             colors = {'Positive': '#28a745', 'Negative': '#dc3545', 'Neutral': '#ffc107'}
@@ -1585,9 +1585,9 @@ elif menu_selection == "New Prediction":
             st.markdown("### 📈 Thống kê nhanh")
             
             # Tạo metrics cards
-            pos_count = sentiment_counts.get('Positive', 0)
-            neg_count = sentiment_counts.get('Negative', 0)
-            neu_count = sentiment_counts.get('Neutral', 0)
+            pos_count = sentiment_counts.get('positive', 0)
+            neg_count = sentiment_counts.get('negative', 0)
+            neu_count = sentiment_counts.get('neutral', 0)
             total_reviews = len(company_df)
             
             col2_1, col2_2 = st.columns(2)
@@ -1610,7 +1610,7 @@ elif menu_selection == "New Prediction":
 
         # Chọn cảm xúc để xem chi tiết review
         sentiment_labels = []
-        sentiment_counts = company_df["sentiment"].value_counts()
+        sentiment_counts = company_df["sentiment_rating"].value_counts()
         sentiment_perc = sentiment_counts / sentiment_counts.sum() * 100
         for sentiment in sentiment_counts.index:
             count = sentiment_counts[sentiment]
@@ -1628,7 +1628,7 @@ elif menu_selection == "New Prediction":
         st.markdown(f"**Danh sách review với cảm xúc: _{chosen_sentiment}_**")
         
         # Tạo bảng với column mapping
-        display_df = company_df[company_df["sentiment"] == chosen_sentiment].copy()
+        display_df = company_df[company_df["sentiment_rating"] == chosen_sentiment].copy()
         
         # Rename columns for display
         column_mapping = {
@@ -1653,7 +1653,7 @@ elif menu_selection == "New Prediction":
         with col_wc1:
             st.subheader("WordCloud tích cực")
             # Sử dụng đúng tên cột
-            pos_reviews = company_df[company_df['sentiment'] == 'Positive']
+            pos_reviews = company_df[company_df['sentiment_rating'] == 'positive']
             pos_text = " ".join(pos_reviews['What I liked'].dropna().astype(str))
             if pos_text.strip():
                 wc = WordCloud(width=400, height=200, background_color="white", colormap='Greens').generate(pos_text)
@@ -1667,7 +1667,7 @@ elif menu_selection == "New Prediction":
         with col_wc2:
             st.subheader("WordCloud tiêu cực")
             # Sử dụng đúng tên cột
-            neg_reviews = company_df[company_df['sentiment'] == 'Negative']
+            neg_reviews = company_df[company_df['sentiment_rating'] == 'negative']
             neg_text = " ".join(neg_reviews['Suggestions for improvement'].dropna().astype(str))
             if neg_text.strip():
                 wc = WordCloud(width=400, height=200, background_color="white", colormap='Reds').generate(neg_text)
@@ -1677,36 +1677,33 @@ elif menu_selection == "New Prediction":
                 st.pyplot(fig)
             else:
                 st.info("Không có dữ liệu để tạo WordCloud tiêu cực")
-
     with tab2:
         st.header("🔍 Phân tích cảm xúc mới")
-        
-        # === 1. Đánh giá sentiment trong review của bạn ===
+    
         st.markdown("### 1️⃣ Đánh giá sentiment trong review của bạn")
-        
+    
         try:
-            # Load model và vectorizer đã huấn luyện
+            # Load model đã huấn luyện
             xgb_model = joblib.load("models/sentiment_model.pkl")
             vectorizer = joblib.load("models/tfidf_vectorizer.pkl")
             label_encoder = joblib.load("models/label_encoder.pkl")
+        
+            liked_text = ""
+            suggestion_text = ""
 
-            # Chọn cách nhập dữ liệu
             input_method = st.radio("Chọn cách nhập dữ liệu:", ["✍️ Nhập tay", "📁 Tải file Excel"])
-
+        
             if input_method == "✍️ Nhập tay":
                 st.markdown("#### 📝 Nhập thông tin review")
-                
                 col_input1, col_input2 = st.columns(2)
-                
+            
                 with col_input1:
                     company = st.text_input("Tên công ty:", placeholder="Ví dụ: FPT Software")
                     liked_text = st.text_area("Nội dung tích cực (What I liked):", 
-                                            placeholder="Ví dụ: Môi trường làm việc tốt, đồng nghiệp thân thiện...",
-                                            height=100)
+                                             placeholder="Ví dụ: Môi trường làm việc tốt...", height=100)
                     suggestion_text = st.text_area("Góp ý cải thiện (Suggestions for improvement):", 
-                                                  placeholder="Ví dụ: Nên cải thiện chế độ lương thưởng...",
-                                                  height=100)
-                
+                                                placeholder="Ví dụ: Nên cải thiện lương...", height=100)
+            
                 with col_input2:
                     st.markdown("##### 📊 Đánh giá chi tiết")
                     rating = st.slider("Rating tổng thể", 1, 5, 3)
@@ -1716,129 +1713,104 @@ elif menu_selection == "New Prediction":
                     culture = st.slider("Văn hóa & giải trí", 1, 5, 3)
                     office = st.slider("Văn phòng & không gian làm việc", 1, 5, 3)
                     recommend = st.selectbox("Có recommend không?", ["Có", "Không"])
-                    
-                    # Đánh giá recommend theo rating
+                
                     st.markdown("---")
-                    st.markdown("##### 🎯 Dự đoán Recommend theo Rating")
-                    
-                    # Logic dự đoán
-                    recommend_probability = {1: 5, 2: 15, 3: 45, 4: 78, 5: 95}
-                    prob = recommend_probability[rating]
-                    
-                    if prob >= 70:
-                        st.success(f"✅ **Khả năng cao sẽ recommend** ({prob}%)")
-                        st.info("Với rating này, nhân viên có xu hướng giới thiệu công ty cho người khác.")
-                    elif prob >= 30:
-                        st.warning(f"⚠️ **Khả năng trung bình sẽ recommend** ({prob}%)")
-                        st.info("Với rating này, nhân viên có thái độ trung tính về việc giới thiệu công ty.")
+                    st.markdown("##### 🎯 Dự đoán Recommend theo đánh giá chi tiết")
+                    factors = [rating, salary, training, care, culture, office]
+                    avg_score = sum(factors) / len(factors)
+                    if avg_score >= 4.2:
+                        prob = 95
+                    elif avg_score >= 3.5:
+                        prob = 78
+                    elif avg_score >= 2.8:
+                        prob = 50
+                    elif avg_score >= 2.0:
+                        prob = 25
                     else:
-                        st.error(f"❌ **Khả năng thấp sẽ recommend** ({prob}%)")
-                        st.info("Với rating này, nhân viên ít có xu hướng giới thiệu công ty cho người khác.")
-                    
-                    # Kết luận recommend
+                        prob = 10
+
                     st.markdown("##### 📋 Kết luận recommend")
-                    if rating >= 4:
-                        conclusion = "🟢 **Nên recommend** - Công ty có rating cao, nhân viên hài lòng"
-                    elif rating >= 3:
-                        conclusion = "🟡 **Có thể recommend** - Công ty có rating trung bình, cần cân nhắc"
+                    if prob >= 70:
+                        st.success(f"🟢 ({prob}%) **Nên recommend** - Công ty có rating cao, nhân viên hài lòng ")
+                    elif prob >= 30:
+                        st.warning(f"🟡 ({prob}%) **Có thể recommend** - Công ty có rating trung bình, cần cân nhắc")
                     else:
-                        conclusion = "🔴 **Không nên recommend** - Công ty có rating thấp, nhân viên không hài lòng"
-                    
-                    st.markdown(conclusion)
-
-                combined_text = (liked_text or "") + " " + (suggestion_text or "")
-
-                if st.button("🔍 Phân tích cảm xúc", type="primary") and combined_text.strip():
+                        st.error(f"🔴 ({prob}%) **Không nên recommend** - Công ty có rating thấp, nhân viên không hài lòng")
+            
+            combined_text = (liked_text or "") + " " + (suggestion_text or "")
+            
+            if st.button("🔍 Phân tích cảm xúc", type="primary") and combined_text.strip():
                     with st.spinner("Đang phân tích..."):
                         X_input = vectorizer.transform([combined_text])
                         pred_xgb = label_encoder.inverse_transform(xgb_model.predict(X_input))[0]
-                        
-                        # Hiển thị kết quả với style đẹp
+
+                    
                         st.markdown("---")
                         st.markdown("#### 📊 Kết quả phân tích")
-                        
                         col_result1, col_result2, col_result3 = st.columns(3)
-                        
+                    
                         with col_result1:
                             if pred_xgb == "positive":
                                 st.success(f"😊 **Sentiment: {pred_xgb.upper()}**")
-                                st.info("Review có xu hướng tích cực!")
                             elif pred_xgb == "negative":
                                 st.error(f"😞 **Sentiment: {pred_xgb.upper()}**")
-                                st.warning("Review có xu hướng tiêu cực!")
                             else:
                                 st.info(f"😐 **Sentiment: {pred_xgb.upper()}**")
-                                st.info("Review có xu hướng trung tính!")
-                        
+                    
                         with col_result2:
                             st.metric("Độ tin cậy", "87.2%")
-                            st.caption("Độ chính xác của model")
-                        
                         with col_result3:
                             st.metric("Thời gian xử lý", "< 0.1s")
-                            st.caption("Tốc độ phân tích")
-
-                        # Bảng tổng hợp thông tin
+                    
                         st.markdown("#### 📋 Tổng hợp thông tin")
                         summary_df = pd.DataFrame({
                             "Thông tin": ["Công ty", "Nội dung tích cực", "Nội dung góp ý", "Rating", "Recommend", "Sentiment"],
-                            "Giá trị": [company, liked_text[:100] + "..." if len(liked_text) > 100 else liked_text, 
-                                       suggestion_text[:100] + "..." if len(suggestion_text) > 100 else suggestion_text,
-                                       f"{rating}/5", recommend, pred_xgb.upper()]
+                            "Giá trị": [company, liked_text[:100] + "..." if len(liked_text) > 100 else liked_text,
+                                        suggestion_text[:100] + "..." if len(suggestion_text) > 100 else suggestion_text,
+                                        f"{rating}/5", recommend, pred_xgb.upper()]
                         })
-                        st.dataframe(summary_df, use_container_width=True)
-
+                    st.dataframe(summary_df, use_container_width=True)
+        
             elif input_method == "📁 Tải file Excel":
                 st.markdown("#### 📁 Tải file Excel để phân tích hàng loạt")
-                
-                # Hướng dẫn format file
                 st.info("""
                 📋 **Yêu cầu format file Excel:**
-                - Có cột **'What I liked'** (nội dung tích cực)
-                - Có cột **'Suggestions for improvement'** (góp ý cải thiện)
-                - Có thể có thêm các cột khác như Company Name, Rating, etc.
+                - Cột **'What I liked'** (nội dung tích cực)
+                - Cột **'Suggestions for improvement'** (góp ý cải thiện)
                 """)
-                
                 uploaded_file = st.file_uploader("Tải file .xlsx chứa review", type="xlsx")
-
                 if uploaded_file:
                     df_new = pd.read_excel(uploaded_file)
-                    
-                    # Kiểm tra format
+                
                     if ("What I liked" not in df_new.columns) or ("Suggestions for improvement" not in df_new.columns):
                         st.error("⚠️ File không đúng format. Vui lòng đảm bảo có cột 'What I liked' và 'Suggestions for improvement'")
                     else:
                         st.success(f"✅ File đã được tải thành công! Tổng số dòng: {len(df_new)}")
-                        
-                        # Hiển thị preview
                         st.markdown("#### 👀 Preview dữ liệu")
                         st.dataframe(df_new.head(), use_container_width=True)
-                        
+                    
                         if st.button("🚀 Bắt đầu phân tích", type="primary"):
                             with st.spinner("Đang phân tích tất cả review..."):
-                                # Phân tích sentiment
                                 combined_col = df_new["What I liked"].fillna("") + " " + df_new["Suggestions for improvement"].fillna("")
                                 X_new = vectorizer.transform(combined_col.astype(str))
                                 df_new["Sentiment"] = label_encoder.inverse_transform(xgb_model.predict(X_new))
-                                
+                                df_new["Sentiment"] = df_new["Sentiment"].str.strip().str.capitalize()
+                            
                                 st.success("✅ Phân tích hoàn thành!")
-                                
-                                # Hiển thị thống kê
+                            
                                 sentiment_stats = df_new["Sentiment"].value_counts()
                                 
                                 col_stats1, col_stats2, col_stats3 = st.columns(3)
                                 with col_stats1:
-                                    st.metric("👍 Tích cực", sentiment_stats.get('Positive', 0))
+                                    st.metric("👍 Tích cực", sentiment_stats.get("Positive", 0))
                                 with col_stats2:
-                                    st.metric("👎 Tiêu cực", sentiment_stats.get('Negative', 0))
+                                    st.metric("👎 Tiêu cực", sentiment_stats.get("Negative", 0))
                                 with col_stats3:
-                                    st.metric("😐 Trung tính", sentiment_stats.get('Neutral', 0))
-                                
-                                # Hiển thị kết quả
+                                    st.metric("😐 Trung tính", sentiment_stats.get("Neutral", 0))
+                            
                                 st.markdown("#### 📊 Kết quả phân tích")
                                 st.dataframe(df_new, use_container_width=True)
-                                
-                                # Tạo nút download
+                            
                                 csv = df_new.to_csv(index=False)
                                 st.download_button(
                                     label="📥 Tải xuống kết quả (CSV)",
@@ -1846,9 +1818,8 @@ elif menu_selection == "New Prediction":
                                     file_name="sentiment_analysis_results.csv",
                                     mime="text/csv"
                                 )
-        
         except FileNotFoundError as e:
             st.error(f"⚠️ Không tìm thấy file model: {str(e)}")
             st.info("Vui lòng đảm bảo các file model tồn tại trong thư mục 'models/'")
         except Exception as e:
-            st.error(f"⚠️ Lỗi khi tải model: {str(e)}")
+            st.error(f"⚠️ Lỗi khi chạy phân tích: {str(e)}")
