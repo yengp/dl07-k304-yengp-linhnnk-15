@@ -45,7 +45,7 @@ st.markdown("""
 # --- Sidebar: Logo, Menu và Thông tin học viên ---
 with st.sidebar:
     # Display logo with improved styling
-    st.image("img/your_logo.jpg", width=250)
+    st.image("img/your_logo.jpg", width=300)
     
     st.markdown("<h3 style='margin-bottom:0.5rem; color: #1f77b4;'>🚀 DATA SCIENCE - MACHINE LEARNING</h3>", unsafe_allow_html=True)
     st.markdown("<p style='font-size:0.9rem; color: #666; margin-bottom:1rem;'>LỚP DL07_K304</p>", unsafe_allow_html=True)
@@ -1712,7 +1712,7 @@ elif menu_selection == "New Prediction":
                     care = st.slider("Sự quan tâm từ quản lý", 1, 5, 3)
                     culture = st.slider("Văn hóa & giải trí", 1, 5, 3)
                     office = st.slider("Văn phòng & không gian làm việc", 1, 5, 3)
-                    recommend = st.selectbox("Có recommend không?", ["Có", "Không"])
+                    recommend = st.radio("Bạn có recommend công ty này không?", ["Có", "Không"])
                 
                     st.markdown("---")
                     st.markdown("##### 🎯 Dự đoán Recommend theo đánh giá chi tiết")
@@ -1743,6 +1743,7 @@ elif menu_selection == "New Prediction":
                     with st.spinner("Đang phân tích..."):
                         X_input = vectorizer.transform([combined_text])
                         pred_xgb = label_encoder.inverse_transform(xgb_model.predict(X_input))[0]
+                        st.write("👉 Nhãn dự đoán model trả về:", pred_xgb)
 
                     
                         st.markdown("---")
@@ -1770,7 +1771,7 @@ elif menu_selection == "New Prediction":
                                         f"{rating}/5", recommend, pred_xgb.upper()]
                         })
                     st.dataframe(summary_df, use_container_width=True)
-        
+
             elif input_method == "📁 Tải file Excel":
                 st.markdown("#### 📁 Tải file Excel để phân tích hàng loạt")
                 st.info("""
@@ -1794,7 +1795,8 @@ elif menu_selection == "New Prediction":
                                 combined_col = df_new["What I liked"].fillna("") + " " + df_new["Suggestions for improvement"].fillna("")
                                 X_new = vectorizer.transform(combined_col.astype(str))
                                 df_new["Sentiment"] = label_encoder.inverse_transform(xgb_model.predict(X_new))
-                                df_new["Sentiment"] = df_new["Sentiment"].str.strip().str.capitalize()
+                                df_new["Sentiment"] = df_new["Sentiment"].str.capitalize()
+                                
                             
                                 st.success("✅ Phân tích hoàn thành!")
                             
