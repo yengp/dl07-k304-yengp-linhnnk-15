@@ -45,7 +45,7 @@ st.markdown("""
 # --- Sidebar: Logo, Menu và Thông tin học viên ---
 with st.sidebar:
     # Display logo with improved styling
-    st.image("img/your_logo.jpg", width=300)
+    st.image("img/your_logo.jpg", width=250)
     
     st.markdown("<h3 style='margin-bottom:0.5rem; color: #1f77b4;'>🚀 DATA SCIENCE - MACHINE LEARNING</h3>", unsafe_allow_html=True)
     st.markdown("<p style='font-size:0.9rem; color: #666; margin-bottom:1rem;'>LỚP DL07_K304</p>", unsafe_allow_html=True)
